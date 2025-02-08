@@ -1,3 +1,5 @@
+// Автор: Yura Gvilia
+
 import UIKit
 
 final class MovieQuizViewController: UIViewController {
