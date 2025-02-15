@@ -3,21 +3,21 @@ import UIKit
 // MARK: - Структуры моделей данных
 
 /// Модель вопроса квиза
-struct QuizQuestion {
+private struct QuizQuestion {
     let image: String
     let text: String
     let correctAnswer: Bool
 }
 
 /// Модель состояния "Вопрос показан"
-struct QuizStepViewModel {
+private struct QuizStepViewModel {
     let image: UIImage
     let question: String
     let questionNumber: String
 }
 
 /// Модель состояния "Результат квиза"
-struct QuizResultsViewModel {
+private struct QuizResultsViewModel {
     let title: String
     let text: String
     let buttonText: String
@@ -26,13 +26,12 @@ struct QuizResultsViewModel {
 final class MovieQuizViewController: UIViewController {
     
     // MARK: - UI Элементы
-    @IBOutlet weak var counterLabel: UILabel!
-    @IBOutlet weak var imageView: UIImageView!
-    @IBOutlet weak var textLabel: UILabel!
-    @IBOutlet weak var questionTitleLabel: UILabel!
+    @IBOutlet private weak var counterLabel: UILabel!
+    @IBOutlet private weak var imageView: UIImageView!
+    @IBOutlet private weak var textLabel: UILabel!
+    @IBOutlet private weak var questionTitleLabel: UILabel!
     
     // MARK: - Данные
-
     private let questions: [QuizQuestion] = [
         QuizQuestion(image: "The_Godfather", text: "Рейтинг этого фильма\nбольше чем 8?", correctAnswer: true),
         QuizQuestion(image: "The_Dark_Knight", text: "Рейтинг этого фильма\nбольше чем 9?", correctAnswer: true),
@@ -46,12 +45,11 @@ final class MovieQuizViewController: UIViewController {
         QuizQuestion(image: "Vivarium", text: "Рейтинг этого фильма\nбольше чем 6?", correctAnswer: false)
     ]
 
-    private var currentQuestionIndex = 0
-    private var correctAnswers = 0
-
-    private var totalGamesPlayed = 0
-    private var totalCorrectAnswers = 0
-    private var bestScore = 0
+    private var currentQuestionIndex: Int = .zero
+    private var correctAnswers: Int = .zero
+    private var totalGamesPlayed: Int = .zero
+    private var totalCorrectAnswers: Int = .zero
+    private var bestScore: Int = .zero
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -63,21 +61,25 @@ final class MovieQuizViewController: UIViewController {
     // MARK: - UI Настройки
     private func setupUI() {
         imageView.contentMode = .scaleAspectFill
-        imageView.layer.cornerRadius = 10
-        imageView.clipsToBounds = true
-        imageView.layer.borderWidth = 0
-        imageView.layer.borderColor = UIColor.clear.cgColor
+        imageView.layer.cornerRadius = 20
+        imageView.clipsToBounds = true // Обрезает изображение по скругленным границам
+        imageView.layer.borderWidth = 8
+        imageView.layer.borderColor = UIColor.clear.cgColor // Изначально граница невидима
     }
-
+    
     // MARK: - Логика игры
     private func showNextQuestion() {
-        guard !questions.isEmpty else {
-            fatalError("Ошибка: Вопросы отсутствуют в массиве!")
-        }
+        guard !questions.isEmpty else { return }
+
+        // Очистка рамки перед сменой вопроса
+        imageView.layer.borderColor = UIColor.clear.cgColor
 
         let currentQuestion = questions[currentQuestionIndex]
         let viewModel = convert(model: currentQuestion)
         show(quiz: viewModel)
+        
+        // Включаем кнопки после смены вопроса
+        self.view.isUserInteractionEnabled = true
     }
 
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
@@ -113,6 +115,9 @@ final class MovieQuizViewController: UIViewController {
     }
 
     private func checkAnswer(_ answer: Bool) {
+        // Отключаем кнопки сразу после нажатия
+        self.view.isUserInteractionEnabled = false
+
         let correctAnswer = questions[currentQuestionIndex].correctAnswer
         showAnswerResult(isCorrect: answer == correctAnswer)
     }
@@ -122,12 +127,15 @@ final class MovieQuizViewController: UIViewController {
             correctAnswers += 1
         }
 
+        view.isUserInteractionEnabled = false // Блокируем нажатия
+
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 8
-        imageView.layer.borderColor = isCorrect ? UIColor.green.cgColor : UIColor.red.cgColor
+        imageView.layer.borderColor = (isCorrect ? UIColor(hex: "#60C28E") : UIColor(hex: "#F56B6C"))?.cgColor
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.showNextQuestionOrResults()
+            self.view.isUserInteractionEnabled = true // Включаем обратно
         }
     }
 
@@ -165,8 +173,8 @@ final class MovieQuizViewController: UIViewController {
             preferredStyle: .alert
         )
         let action = UIAlertAction(title: result.buttonText, style: .default) { _ in
-            self.currentQuestionIndex = 0
-            self.correctAnswers = 0
+            self.currentQuestionIndex = .zero
+            self.correctAnswers = .zero
             self.showNextQuestion()
         }
         alert.addAction(action)
