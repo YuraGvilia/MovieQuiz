@@ -84,6 +84,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         imageView.image = step.image
         textLabel.text = step.question
         counterLabel.text = step.questionNumber
+        // Сброс цвета рамки для изображения, чтобы не оставался предыдущий цвет
+        imageView.layer.borderColor = UIColor.clear.cgColor
     }
 
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
