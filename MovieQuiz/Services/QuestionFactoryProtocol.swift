@@ -1,12 +1,9 @@
-//
-//  QuestionFactoryProtocol.swift
-//  MovieQuiz
-//
-//  Created by Yura Gvilia on 28.02.2025.
-//
+import Foundation
 
 protocol QuestionFactoryProtocol {
+    /// Начать асинхронную загрузку данных (фильмов) с сервера
+    func loadData()
+    
+    /// Запросить следующий вопрос (уже после загрузки)
     func requestNextQuestion()
 }
-
-
