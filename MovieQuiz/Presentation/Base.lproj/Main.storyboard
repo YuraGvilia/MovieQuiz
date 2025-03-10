@@ -140,10 +140,12 @@
                     </view>
                     <connections>
                         <outlet property="activityIndicator" destination="Vzy-y5-7c7" id="iyL-He-q4f"/>
-                        <outlet property="counterLabel" destination="iUg-mY-mol" id="rgU-KN-8Q6"/>
+                        <outlet property="counterLabel" destination="iUg-mY-mol" id="t5E-6f-I1Q"/>
                         <outlet property="imageView" destination="yOS-rf-fot" id="0jZ-X8-vxM"/>
+                        <outlet property="noButton" destination="KnF-yv-ssi" id="8Ov-TE-iX5"/>
                         <outlet property="questionTitleLabel" destination="s28-UY-zQq" id="P4X-oJ-atH"/>
                         <outlet property="textLabel" destination="eg5-2L-iCg" id="Z1q-I9-jng"/>
+                        <outlet property="yesButton" destination="JDe-ul-kdf" id="Bsd-zd-sNq"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>

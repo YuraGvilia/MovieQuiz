@@ -3,7 +3,6 @@ import Foundation
 final class QuestionFactory: QuestionFactoryProtocol {
     private let moviesLoader: MoviesLoading
     private weak var delegate: QuestionFactoryDelegate?
-    
     private var movies: [MostPopularMovie] = []
     
     init(moviesLoader: MoviesLoading, delegate: QuestionFactoryDelegate?) {
@@ -12,13 +11,13 @@ final class QuestionFactory: QuestionFactoryProtocol {
     }
     
     func loadData() {
-        moviesLoader.loadMovies { [weak self] (result: Result<MostPopularMovies, Error>) in
+        moviesLoader.loadMovies { [weak self] result in
             guard let self = self else { return }
             
             DispatchQueue.main.async {
                 switch result {
-                case .success(let mostPopularMovies):
-                    self.movies = mostPopularMovies.items
+                case .success(let movies):
+                    self.movies = movies
                     self.delegate?.didLoadDataFromServer()
                 case .failure(let error):
                     self.delegate?.didFailToLoadData(with: error)
@@ -27,36 +26,62 @@ final class QuestionFactory: QuestionFactoryProtocol {
         }
     }
     
-    /// Создаёт случайный вопрос о фильме
     func requestNextQuestion() {
         DispatchQueue.global().async { [weak self] in
-            guard let self = self, !self.movies.isEmpty else {
+            guard let self = self else { return }
+            
+            // Если фильмов нет, отправим nil
+            if self.movies.isEmpty {
                 DispatchQueue.main.async {
-                    self?.delegate?.didReceiveNextQuestion(question: nil)
+                    self.delegate?.didReceiveNextQuestion(question: nil)
                 }
                 return
             }
             
             // Выбираем случайный фильм
-            guard let movie = self.movies.randomElement() else { return }
+            guard let movie = self.movies.randomElement() else {
+                DispatchQueue.main.async {
+                    self.delegate?.didReceiveNextQuestion(question: nil)
+                }
+                return
+            }
             
-            // Генерация случайного порога рейтинга (от 5 до 9)
+            // Генерируем случайный рейтинг (5...9) и случайный тип вопроса (больше/меньше)
             let randomThreshold = Float.random(in: 5...9)
             let rating = Float(movie.rating) ?? 0
+            let isGreater = Bool.random()
             
-            let text = "Рейтинг этого фильма больше, чем \(Int(randomThreshold))?"
-            let correctAnswer = rating > randomThreshold
+            let text = isGreater
+            ? "Рейтинг этого фильма больше, чем \(Int(randomThreshold))?"
+            : "Рейтинг этого фильма меньше, чем \(Int(randomThreshold))?"
             
-            // Загружаем изображение
+            let correctAnswer = isGreater ? (rating > randomThreshold) : (rating < randomThreshold)
+            
+            // Пытаемся загрузить постер
             var imageData = Data()
             do {
                 imageData = try Data(contentsOf: movie.resizedImageURL)
             } catch {
-                print("⚠️ Ошибка загрузки изображения: \(error.localizedDescription)")
+                // Ошибка загрузки постера — сообщим о ней
+                DispatchQueue.main.async {
+                    let customError = NSError(
+                        domain: "",
+                        code: -4,
+                        userInfo: [NSLocalizedDescriptionKey: "Ошибка загрузки постера фильма."]
+                    )
+                    self.delegate?.didFailToLoadData(with: customError)
+                }
+                return
             }
             
-            let question = QuizQuestion(image: imageData, text: text, correctAnswer: correctAnswer)
+            // Формируем вопрос
+            let question = QuizQuestion(
+                image: imageData,
+                text: text,
+                correctAnswer: correctAnswer
+            )
             
+            // Возвращаемся в главный поток
             DispatchQueue.main.async {
                 self.delegate?.didReceiveNextQuestion(question: question)
             }

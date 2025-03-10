@@ -2,15 +2,15 @@
 //  StatisticServiceImplementation.swift
 //  MovieQuiz
 //
-//  Created by Yura Gvilia on 01.03.2025.
+//  Created by Yura Gvilia on 03.03.2025.
 //
 
 import Foundation
 
-final class StatisticServiceImplementation: StatisticService {
+final class StatisticServiceImplementation: StatisticServiceProtocol {
     private let storage: UserDefaults = .standard
-
-    // Используем enum для ключей, чтобы не ошибиться в названиях
+    
+    // MARK: - Ключи UserDefaults
     private enum Keys: String {
         case gamesCount
         case bestGameCorrect
@@ -19,6 +19,7 @@ final class StatisticServiceImplementation: StatisticService {
         case correctAnswers
     }
     
+    // MARK: - Свойства из протокола
     var gamesCount: Int {
         get { storage.integer(forKey: Keys.gamesCount.rawValue) }
         set { storage.set(newValue, forKey: Keys.gamesCount.rawValue) }
@@ -28,7 +29,6 @@ final class StatisticServiceImplementation: StatisticService {
         get {
             let correct = storage.integer(forKey: Keys.bestGameCorrect.rawValue)
             let total = storage.integer(forKey: Keys.bestGameTotal.rawValue)
-            // Если нет сохранённой даты, берем текущую дату
             let date = storage.object(forKey: Keys.bestGameDate.rawValue) as? Date ?? Date()
             return GameResult(correct: correct, total: total, date: date)
         }
@@ -39,27 +39,31 @@ final class StatisticServiceImplementation: StatisticService {
         }
     }
     
+    var totalAccuracy: Double {
+        guard gamesCount > 0 else { return 0 }
+        // Предположим, что в каждой игре 10 вопросов
+        let totalQuestions = gamesCount * 10
+        return (Double(correctAnswers) / Double(totalQuestions)) * 100
+    }
+    
+    // MARK: - Локальное хранение правильных ответов
     private var correctAnswers: Int {
         get { storage.integer(forKey: Keys.correctAnswers.rawValue) }
         set { storage.set(newValue, forKey: Keys.correctAnswers.rawValue) }
     }
     
-    var totalAccuracy: Double {
-        guard gamesCount > 0 else { return 0 }
-        let totalQuestions = gamesCount * 10  // предположим, что в каждой игре 10 вопросов
-        return (Double(correctAnswers) / Double(totalQuestions)) * 100
-    }
-    
+    // MARK: - Метод протокола для записи результатов
     func store(correct count: Int, total amount: Int) {
-        // Увеличиваем число сыгранных игр и правильных ответов
         gamesCount += 1
         correctAnswers += count
         
         // Сравниваем текущую игру с сохранённым рекордом
         let currentBestGame = bestGame
         let currentAccuracy = Double(count) / Double(amount)
-        let bestAccuracy: Double = currentBestGame.total > 0 ?
-            (Double(currentBestGame.correct) / Double(currentBestGame.total)) : 0
+        
+        let bestAccuracy = currentBestGame.total > 0
+            ? Double(currentBestGame.correct) / Double(currentBestGame.total)
+            : 0
         
         if currentAccuracy > bestAccuracy {
             bestGame = GameResult(correct: count, total: amount, date: Date())
