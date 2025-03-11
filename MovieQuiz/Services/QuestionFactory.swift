@@ -17,8 +17,16 @@ final class QuestionFactory: QuestionFactoryProtocol {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let movies):
+                    if movies.isEmpty {
+                        let emptyError = NSError(domain: "", code: -3, userInfo: [
+                            NSLocalizedDescriptionKey: "Список фильмов пуст. Попробуйте позже."
+                        ])
+                        self.delegate?.didFailToLoadData(with: emptyError)
+                        return
+                    }
                     self.movies = movies
                     self.delegate?.didLoadDataFromServer()
+                    
                 case .failure(let error):
                     self.delegate?.didFailToLoadData(with: error)
                 }
@@ -31,14 +39,6 @@ final class QuestionFactory: QuestionFactoryProtocol {
             guard let self = self else { return }
             
             // Если фильмов нет, отправим nil
-            if self.movies.isEmpty {
-                DispatchQueue.main.async {
-                    self.delegate?.didReceiveNextQuestion(question: nil)
-                }
-                return
-            }
-            
-            // Выбираем случайный фильм
             guard let movie = self.movies.randomElement() else {
                 DispatchQueue.main.async {
                     self.delegate?.didReceiveNextQuestion(question: nil)
@@ -52,8 +52,8 @@ final class QuestionFactory: QuestionFactoryProtocol {
             let isGreater = Bool.random()
             
             let text = isGreater
-            ? "Рейтинг этого фильма больше, чем \(Int(randomThreshold))?"
-            : "Рейтинг этого фильма меньше, чем \(Int(randomThreshold))?"
+                ? "Рейтинг этого фильма больше, чем \(Int(randomThreshold))?"
+                : "Рейтинг этого фильма меньше, чем \(Int(randomThreshold))?"
             
             let correctAnswer = isGreater ? (rating > randomThreshold) : (rating < randomThreshold)
             

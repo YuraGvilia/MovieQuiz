@@ -9,7 +9,6 @@ final class MovieQuizUITests: XCTestCase {
         app = XCUIApplication()
         app.launch()
         
-        // Ждём, пока приложение загрузится
         let exists = app.waitForExistence(timeout: 10)
         XCTAssertTrue(exists, "Приложение не запустилось в заданное время!")
     }
@@ -60,10 +59,9 @@ final class MovieQuizUITests: XCTestCase {
         XCTAssertNotEqual(firstPosterData, secondPosterData, "Постер не изменился после нажатия 'Нет'!")
     }
     
-    /// Тест завершения игры: проверяем, что алерт появился (заголовок, кнопка)
+    /// Тест завершения игры: проверяем, что алерт появился (заголовок и текст кнопки)
     func testGameFinish() {
         sleep(2)
-        
         for _ in 1...10 {
             let noButton = app.buttons["NoButton"]
             XCTAssertTrue(noButton.waitForExistence(timeout: 5), "NoButton не появился вовремя")
@@ -83,8 +81,6 @@ final class MovieQuizUITests: XCTestCase {
     /// Тест закрытия алерта и начала новой игры
     func testAlertDismiss() {
         sleep(2)
-        
-        // Делаем 10 нажатий
         for _ in 1...10 {
             let noButton = app.buttons["NoButton"]
             XCTAssertTrue(noButton.waitForExistence(timeout: 5), "NoButton не появился вовремя")
@@ -103,7 +99,6 @@ final class MovieQuizUITests: XCTestCase {
         
         XCTAssertFalse(alert.exists, "Алерт не скрылся после нажатия кнопки!")
         
-        // Проверяем, что счетчик стал "1/10"
         let indexLabel = app.staticTexts["Index"]
         XCTAssertTrue(indexLabel.waitForExistence(timeout: 5), "Index label не появился")
         XCTAssertEqual(indexLabel.label, "1/10", "Счетчик не сбросился до 1/10!")

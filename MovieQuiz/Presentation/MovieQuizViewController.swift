@@ -8,16 +8,16 @@
 import UIKit
 
 final class MovieQuizViewController: UIViewController,
-                                     MovieQuizViewControllerProtocol,
-                                     AlertPresenterDelegate {
+                                    MovieQuizViewControllerProtocol,
+                                    AlertPresenterDelegate {
     // MARK: - UI Elements (IBOutlet)
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
-    @IBOutlet private weak var counterLabel: UILabel!
-    @IBOutlet private weak var imageView: UIImageView!
-    @IBOutlet private weak var textLabel: UILabel!
-    @IBOutlet private weak var questionTitleLabel: UILabel!
-    @IBOutlet private weak var noButton: UIButton!
-    @IBOutlet private weak var yesButton: UIButton!
+    @IBOutlet private weak var counterLabel: UILabel!         // Должен быть подключен к лейблу "Index"
+    @IBOutlet private weak var imageView: UIImageView!          // Постер
+    @IBOutlet private weak var textLabel: UILabel!              // Текст вопроса
+    @IBOutlet private weak var questionTitleLabel: UILabel!     // Заголовок вопроса (если нужен)
+    @IBOutlet private weak var noButton: UIButton!              // Кнопка "Нет"
+    @IBOutlet private weak var yesButton: UIButton!             // Кнопка "Да"
     
     // MARK: - MVP Presenter
     private var presenter: MovieQuizPresenter!
@@ -29,27 +29,19 @@ final class MovieQuizViewController: UIViewController,
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Индикатор скрывается, когда останавливается
         activityIndicator.hidesWhenStopped = true
         
-        // Инициализируем Presenter
+        // Инициализируем Presenter и AlertPresenter
         presenter = MovieQuizPresenter(viewController: self)
-        
-        // Инициализируем AlertPresenter с делегатом
         alertPresenter = AlertPresenter(delegate: self)
         
-        // Настраиваем UI
         setupUI()
-        
-        // Устанавливаем идентификаторы для UI-тестов
-        // (Убедитесь, что Outlets не nil)
         setupAccessibilityIdentifiers()
         
-        // Показываем индикатор
         showLoadingIndicator()
     }
     
-    // MARK: - Настройка UI
+    // MARK: - UI Setup
     private func setupUI() {
         imageView.contentMode = .scaleAspectFill
         imageView.layer.cornerRadius = 20
@@ -67,17 +59,16 @@ final class MovieQuizViewController: UIViewController,
     
     // MARK: - MovieQuizViewControllerProtocol
     func show(quiz step: QuizStepViewModel) {
-        // Сбрасываем рамку
+        // Сбрасываем рамку перед обновлением UI
         imageView.layer.borderColor = UIColor.clear.cgColor
         
-        // Обновляем UI
         imageView.image = step.image
         textLabel.text = step.question
         counterLabel.text = step.questionNumber
     }
     
     func show(quiz result: QuizResultsViewModel) {
-        // Показываем итоговый экран через AlertPresenter
+        // Здесь результат уже сформирован презентером, и result.text содержит итоговое сообщение
         alertPresenter.showResultAlert(
             title: result.title,
             message: result.text,
@@ -91,6 +82,7 @@ final class MovieQuizViewController: UIViewController,
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 8
         
+        // Берём цвета из Assets (если их нет, используем fallback)
         let correctColor = UIColor(named: "QuizBorderColorCorrect") ?? UIColor.green
         let incorrectColor = UIColor(named: "QuizBorderColorIncorrect") ?? UIColor.red
         
@@ -129,9 +121,12 @@ final class MovieQuizViewController: UIViewController,
         present(alert, animated: true)
     }
     
-    // MARK: - Status Bar
-    /// Делаем статус-бар видимым
-    override var prefersStatusBarHidden: Bool { false }
-    /// Делаем его светлым
-    override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
+    // MARK: - Status Bar Style
+    override var prefersStatusBarHidden: Bool {
+        return false
+    }
+    
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        return .lightContent
+    }
 }

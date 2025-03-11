@@ -1,3 +1,10 @@
+//
+//  MovieQuizPresenter.swift
+//  MovieQuiz
+//
+//  Created by Yura Gvilia on 09.03.2025.
+//
+
 import UIKit
 
 final class MovieQuizPresenter: QuestionFactoryDelegate {
@@ -37,7 +44,6 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         currentQuestion = question
         
         let viewModel = convert(model: question)
-        
         DispatchQueue.main.async { [weak self] in
             self?.viewController?.show(quiz: viewModel)
         }
@@ -45,14 +51,14 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     
     // MARK: - Quiz Logic
     func convert(model: QuizQuestion) -> QuizStepViewModel {
-        QuizStepViewModel(
-            image: UIImage(data: model.image) ?? UIImage(),
+        return QuizStepViewModel(
+            image: UIImage(data: model.image) ?? UIImage(systemName: "photo")!,
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)"
         )
     }
     
-    /// Формирует QuizResultsViewModel (вместо текста в контроллере)
+    /// Формирует модель результатов игры с заранее вычисленным текстом
     func makeResultsViewModel() -> QuizResultsViewModel {
         statisticService.store(correct: correctAnswers, total: questionsAmount)
         
@@ -114,7 +120,6 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     
     private func proceedToNextQuestionOrResults() {
         if currentQuestionIndex == questionsAmount - 1 {
-            // Формируем финальный экран
             let viewModel = makeResultsViewModel()
             DispatchQueue.main.async { [weak self] in
                 self?.viewController?.show(quiz: viewModel)
