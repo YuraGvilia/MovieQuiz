@@ -8,9 +8,8 @@
 import UIKit
 
 final class MovieQuizViewController: UIViewController,
-                                    MovieQuizViewControllerProtocol,
-                                    AlertPresenterDelegate
-{
+                                     MovieQuizViewControllerProtocol,
+                                     AlertPresenterDelegate {
     // MARK: - UI Elements (IBOutlet)
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     @IBOutlet private weak var counterLabel: UILabel!
@@ -19,38 +18,37 @@ final class MovieQuizViewController: UIViewController,
     @IBOutlet private weak var questionTitleLabel: UILabel!
     @IBOutlet private weak var noButton: UIButton!
     @IBOutlet private weak var yesButton: UIButton!
-
+    
     // MARK: - MVP Presenter
     private var presenter: MovieQuizPresenter!
     
     // MARK: - Alert Presenter
     private var alertPresenter: AlertPresenter!
-
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         // Индикатор скрывается, когда останавливается
         activityIndicator.hidesWhenStopped = true
         
-        // Инициализируем Presenter (MVP)
+        // Инициализируем Presenter
         presenter = MovieQuizPresenter(viewController: self)
         
-        // Инициализируем AlertPresenter и передаём делегата
+        // Инициализируем AlertPresenter с делегатом
         alertPresenter = AlertPresenter(delegate: self)
         
-        // Настраиваем UI (ImageView и т.д.)
+        // Настраиваем UI
         setupUI()
-
-        // Устанавливаем Accessibility Identifiers с задержкой, чтобы UI успел загрузиться
-        DispatchQueue.main.async {
-            self.setupAccessibilityIdentifiers()
-        }
-
+        
+        // Устанавливаем идентификаторы для UI-тестов
+        // (Убедитесь, что Outlets не nil)
+        setupAccessibilityIdentifiers()
+        
         // Показываем индикатор
         showLoadingIndicator()
     }
-
+    
     // MARK: - Настройка UI
     private func setupUI() {
         imageView.contentMode = .scaleAspectFill
@@ -60,32 +58,16 @@ final class MovieQuizViewController: UIViewController,
         imageView.layer.borderColor = UIColor.clear.cgColor
     }
     
-    /// Устанавливаем идентификаторы для UI-тестов (проверка на `nil`)
     private func setupAccessibilityIdentifiers() {
         imageView.accessibilityIdentifier = "Poster"
-        
-        if let counterLabel = counterLabel {
-            counterLabel.accessibilityIdentifier = "Index"
-        } else {
-            print("⚠ Ошибка: counterLabel не найден в Storyboard!")
-        }
-
-        if let yesButton = yesButton {
-            yesButton.accessibilityIdentifier = "YesButton"
-        } else {
-            print("⚠ Ошибка: yesButton не найден в Storyboard!")
-        }
-
-        if let noButton = noButton {
-            noButton.accessibilityIdentifier = "NoButton"
-        } else {
-            print("⚠ Ошибка: noButton не найден в Storyboard!")
-        }
+        counterLabel.accessibilityIdentifier = "Index"
+        yesButton.accessibilityIdentifier = "YesButton"
+        noButton.accessibilityIdentifier = "NoButton"
     }
-
-    // MARK: - MovieQuizViewControllerProtocol (MVP)
+    
+    // MARK: - MovieQuizViewControllerProtocol
     func show(quiz step: QuizStepViewModel) {
-        // Сбрасываем цвет рамки
+        // Сбрасываем рамку
         imageView.layer.borderColor = UIColor.clear.cgColor
         
         // Обновляем UI
@@ -93,50 +75,37 @@ final class MovieQuizViewController: UIViewController,
         textLabel.text = step.question
         counterLabel.text = step.questionNumber
     }
-
+    
     func show(quiz result: QuizResultsViewModel) {
-        guard let alertPresenter = alertPresenter else {
-            print("⚠ Ошибка: `alertPresenter` = nil, алерт не будет показан!")
-            return
-        }
-
-        let message = presenter.makeResultsMessage()
+        // Показываем итоговый экран через AlertPresenter
         alertPresenter.showResultAlert(
             title: result.title,
-            message: message,
+            message: result.text,
             buttonText: result.buttonText
         ) { [weak self] in
             self?.presenter.restartGame()
         }
     }
-
+    
     func highlightImageBorder(isCorrectAnswer: Bool) {
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 8
         
-        // Берём цвета из ассетов (или fallback)
         let correctColor = UIColor(named: "QuizBorderColorCorrect") ?? UIColor.green
         let incorrectColor = UIColor(named: "QuizBorderColorIncorrect") ?? UIColor.red
         
         imageView.layer.borderColor = isCorrectAnswer ? correctColor.cgColor : incorrectColor.cgColor
     }
-
+    
     func showLoadingIndicator() {
         activityIndicator.startAnimating()
     }
-
+    
     func hideLoadingIndicator() {
         activityIndicator.stopAnimating()
     }
-
+    
     func showNetworkError(message: String) {
-        // Проверка, что алерт-презентер существует
-        guard let alertPresenter = alertPresenter else {
-            print("⚠ Ошибка: `alertPresenter` = nil, алерт не будет показан!")
-            return
-        }
-
-        // Показываем алерт об ошибке
         alertPresenter.showResultAlert(
             title: "Ошибка",
             message: message,
@@ -145,24 +114,24 @@ final class MovieQuizViewController: UIViewController,
             self?.presenter.restartGame()
         }
     }
-
+    
     // MARK: - User Actions
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
         presenter.yesButtonClicked()
     }
-
+    
     @IBAction private func noButtonClicked(_ sender: UIButton) {
         presenter.noButtonClicked()
     }
-
+    
     // MARK: - AlertPresenterDelegate
     func presentAlert(_ alert: UIAlertController) {
-        // Показываем алерт
         present(alert, animated: true)
     }
-
-    // MARK: - Стиль статус-бара
-    override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .lightContent
-    }
+    
+    // MARK: - Status Bar
+    /// Делаем статус-бар видимым
+    override var prefersStatusBarHidden: Bool { false }
+    /// Делаем его светлым
+    override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
 }

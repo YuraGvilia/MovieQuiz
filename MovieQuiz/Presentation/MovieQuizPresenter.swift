@@ -4,7 +4,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     // MARK: - Private properties
     private let statisticService: StatisticServiceProtocol
     private var questionFactory: QuestionFactoryProtocol?
-    private weak var viewController: MovieQuizViewControllerProtocol?  // ← MVP: работаем через протокол
+    private weak var viewController: MovieQuizViewControllerProtocol?
     
     private var currentQuestion: QuizQuestion?
     private let questionsAmount: Int = 10
@@ -14,8 +14,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     // MARK: - Initialization
     init(viewController: MovieQuizViewControllerProtocol) {
         self.viewController = viewController
-        
-        statisticService = StatisticServiceImplementation()
+        self.statisticService = StatisticServiceImplementation()
         
         questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
         questionFactory?.loadData()
@@ -39,7 +38,6 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         
         let viewModel = convert(model: question)
         
-        // Обновляем UI только в главном потоке
         DispatchQueue.main.async { [weak self] in
             self?.viewController?.show(quiz: viewModel)
         }
@@ -47,14 +45,15 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     
     // MARK: - Quiz Logic
     func convert(model: QuizQuestion) -> QuizStepViewModel {
-        return QuizStepViewModel(
+        QuizStepViewModel(
             image: UIImage(data: model.image) ?? UIImage(),
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)"
         )
     }
     
-    func makeResultsMessage() -> String {
+    /// Формирует QuizResultsViewModel (вместо текста в контроллере)
+    func makeResultsViewModel() -> QuizResultsViewModel {
         statisticService.store(correct: correctAnswers, total: questionsAmount)
         
         let bestGame = statisticService.bestGame
@@ -63,12 +62,18 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         let bestGameInfoLine = "Рекорд: \(bestGame.correct)/\(bestGame.total) (\(bestGame.date.dateTimeString))"
         let averageAccuracyLine = "Средняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%"
         
-        return [
+        let message = [
             currentGameResultLine,
             totalPlaysCountLine,
             bestGameInfoLine,
             averageAccuracyLine
         ].joined(separator: "\n")
+        
+        return QuizResultsViewModel(
+            title: "Этот раунд окончен!",
+            text: message,
+            buttonText: "Сыграть ещё раз"
+        )
     }
     
     func restartGame() {
@@ -98,37 +103,21 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     }
     
     private func proceedWithAnswer(isCorrect: Bool) {
-        // Подсвечиваем рамку
         DispatchQueue.main.async { [weak self] in
             self?.viewController?.highlightImageBorder(isCorrectAnswer: isCorrect)
         }
         
-        // Переходим к следующему вопросу (или финалу) через 1 секунду
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             self?.proceedToNextQuestionOrResults()
         }
     }
     
     private func proceedToNextQuestionOrResults() {
-        // Проверяем, достигли ли конца
         if currentQuestionIndex == questionsAmount - 1 {
-            let text = (correctAnswers == questionsAmount)
-                ? "Поздравляем, вы ответили на 10 из 10!"
-                : "Вы ответили на \(correctAnswers) из 10, попробуйте ещё раз!"
-            
-            let viewModel = QuizResultsViewModel(
-                title: "Этот раунд окончен!",
-                text: text,
-                buttonText: "Сыграть ещё раз"
-            )
-            
-            // Безопасно обращаемся к viewController
+            // Формируем финальный экран
+            let viewModel = makeResultsViewModel()
             DispatchQueue.main.async { [weak self] in
-                guard let viewController = self?.viewController else {
-                    print("⚠ Ошибка: viewController = nil, пропускаем показ результата.")
-                    return
-                }
-                viewController.show(quiz: viewModel)
+                self?.viewController?.show(quiz: viewModel)
             }
         } else {
             currentQuestionIndex += 1
