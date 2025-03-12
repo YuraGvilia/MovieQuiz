@@ -10,7 +10,7 @@ struct MostPopularMovie: Codable {
     let rating: String
     let imageURL: URL
     
-    // Вычисляемый URL для улучшенного качества изображения
+    // Пример вычисляемого URL для улучшенного качества изображения
     var resizedImageURL: URL {
         let urlString = imageURL.absoluteString
         let imageUrlString = urlString.components(separatedBy: "._")[0] + "._V0_UX600_.jpg"
@@ -18,8 +18,8 @@ struct MostPopularMovie: Codable {
     }
     
     private enum CodingKeys: String, CodingKey {
-        case title = "fullTitle"
-        case rating = "imDbRating"
-        case imageURL = "image"
+        case title = "fullTitle"    // "fullTitle" из JSON кладём в title
+        case rating = "imDbRating"  // "imDbRating" в rating
+        case imageURL = "image"     // "image" в imageURL
     }
 }

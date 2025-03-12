@@ -1,36 +1,41 @@
 import Foundation
 
-/// Простой сетевой клиент, который умеет загружать `Data` по URL
-struct NetworkClient {
+/// Протокол, описывающий базовый сетевой функционал
+protocol NetworkRouting {
+    func fetch(url: URL, completion: @escaping (Result<Data, Error>) -> Void)
+}
+
+/// Реальная реализация протокола, ходит в сеть через URLSession
+struct NetworkClient: NetworkRouting {
     private enum NetworkError: Error {
-        case codeError
+        case invalidStatusCode
     }
     
-    func fetch(url: URL, handler: @escaping (Result<Data, Error>) -> Void) {
+    func fetch(url: URL, completion: @escaping (Result<Data, Error>) -> Void) {
         let request = URLRequest(url: url)
         
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            // 1) Проверяем, не пришла ли сразу ошибка
+            // Если есть ошибка сети — сразу возвращаем её
             if let error = error {
-                handler(.failure(error))
+                completion(.failure(error))
                 return
             }
-            
-            // 2) Проверяем HTTP-код ответа
+            // Проверяем код ответа (должен быть 2xx)
             if let httpResponse = response as? HTTPURLResponse,
-               httpResponse.statusCode < 200 || httpResponse.statusCode >= 300 {
-                handler(.failure(NetworkError.codeError))
+               !(200...299).contains(httpResponse.statusCode) {
+                completion(.failure(NetworkError.invalidStatusCode))
                 return
             }
-            
-            // 3) Проверяем, что data не nil
+            // Проверяем, что data не nil
             guard let data = data else {
-                handler(.failure(NetworkError.codeError))
+                let noDataError = NSError(domain: "", code: -1, userInfo: [
+                    NSLocalizedDescriptionKey: "Нет данных от сервера"
+                ])
+                completion(.failure(noDataError))
                 return
             }
-            
-            // 4) Всё ок — возвращаем data
-            handler(.success(data))
+            // Успех — возвращаем Data
+            completion(.success(data))
         }
         
         task.resume()

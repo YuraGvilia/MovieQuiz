@@ -2,10 +2,11 @@
 //  QuizResultsViewModel.swift
 //  MovieQuiz
 //
-//  Created by Yura Gvilia on 27.02.2025.
+//  Created by Yura Gvilia on 09.03.2025.
 //
 
-/// Модель состояния "Результат квиза"
+import Foundation
+
 struct QuizResultsViewModel {
     let title: String
     let text: String
